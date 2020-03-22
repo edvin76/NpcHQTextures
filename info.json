@@ -1,0 +1,14 @@
+{
+  "Id": "CommunityPatch",
+  "DisplayName": "Community Patch",
+  "Author": "PathfindeModmaker",
+  "Version": "1.0.0",
+  "ManagerVersion": "0.21.0",
+  "Requirements": [],
+  "AssemblyName": "CommunityPatch.dll",
+  "EntryMethod": "CommunityPatch.Main.Load",
+  "HomePage": "https://www.nexusmods.com/pathfinderkingmaker/mods/168",
+  "Repository": "https://raw.githubusercontent.com/PathfinderModmaker/CommunityPatch/master/CommunityPatch/Repository.json"
+
+
+}
