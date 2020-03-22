@@ -22,6 +22,10 @@ namespace NpcHQTextures
 		// Token: 0x06000003 RID: 3 RVA: 0x000027B4 File Offset: 0x000009B4
 		private static bool Prefix(UnitEntityData __instance, ref UnitEntityView __result)
 		{
+            if (!Main.modEnabled)
+            {
+                return false;
+            }
             Polymorph activePolymorph = __instance.GetActivePolymorph();
             if (activePolymorph != null)
             {

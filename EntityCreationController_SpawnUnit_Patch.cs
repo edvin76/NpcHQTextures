@@ -22,7 +22,10 @@ namespace NpcHQTextures
         // Token: 0x06000038 RID: 56 RVA: 0x0000227B File Offset: 0x0000047B
         private static bool Prefix(EntityCreationController __instance, BlueprintUnit unit, UnitEntityView prefab, Vector3 position, Quaternion rotation, SceneEntitiesState state, ref UnitEntityData __result)
         {
-
+            if (!Main.modEnabled)
+            {
+                return false;
+            }
             if (unit == null)
             {
 
