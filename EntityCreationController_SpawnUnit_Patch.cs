@@ -24,12 +24,12 @@ namespace NpcHQTextures
         {
             if (!Main.modEnabled)
             {
-                return false;
+                return true;
             }
             if (unit == null)
             {
 
-                Main.DebugLog("Trying to spawn null unit");
+                Main.DebugLog("Trying to spawn null unit.");
                 return false;
             }
             if (prefab == null)
@@ -39,7 +39,7 @@ namespace NpcHQTextures
             }
 
 
-            Main.DebugLog("SpawnUnit() - " + unit.CharacterName + " - " + unit.name + " - " + unit.AssetGuid);
+           // Main.DebugLog("SpawnUnit() -  " + unit.CharacterName + " - " + unit.name + " - " + unit.AssetGuid);
 
 
             prefab.UniqueId = Guid.NewGuid().ToString();
@@ -60,7 +60,8 @@ namespace NpcHQTextures
             //if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
             if(unit.CustomizationPreset != null)
             {
-                texfullpath = Main.randomPool(unit);
+                
+                texfullpath = Main.randomPool(unit, "");
             }
 
             unitEntityView = Main.unitEntityViewTexReplacer(unitEntityView, texfullpath);

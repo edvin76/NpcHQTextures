@@ -46,8 +46,10 @@ namespace NpcHQTextures
 
         public static UnitEntityView unitEntityViewTexReplacer(UnitEntityView unitEntityView, string texfullpath)
         {
+            
 
             string origtexname = "";
+      
 
             if (unitEntityView != null && unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Count() > 0)
             {
@@ -67,7 +69,10 @@ namespace NpcHQTextures
                         if (Main.texOnDiskInfoList.Keys.Any(key => key.Contains(!string.IsNullOrEmpty(smr.material?.mainTexture?.name) ? smr.material?.mainTexture?.name : "noname")))
                         {
 
-                            texfullpath = Main.texOnDiskInfoList.Keys.First(key => key.Contains(smr.material.mainTexture.name));
+                            if (string.IsNullOrEmpty(texfullpath))
+                            {
+                                texfullpath = Main.texOnDiskInfoList.Keys.First(key => key.Contains(smr.material.mainTexture.name));
+                            }
 
                             origtexname = smr.material.mainTexture.name;
 
@@ -126,7 +131,7 @@ namespace NpcHQTextures
 
                             unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => ((tname = x.material.mainTexture.name) == origtexname)).material.mainTexture = readableText;
 
-                            Main.DebugLog(tname);
+                          //  Main.DebugLog(tname);
 
                         }
                     }
@@ -139,24 +144,57 @@ namespace NpcHQTextures
 
             return unitEntityView;
         }
-        public static string randomPool(BlueprintUnit blueprintUnit)
+        public static string randomPool(BlueprintUnit blueprintUnit, string customPrefabGuid)
         {
 
             string path2 = Main.hqTexPath;
+
+           // string texfullpath = "";
             string presetName = blueprintUnit.CustomizationPreset.name;
             UnitCustomizationPreset preset = blueprintUnit.CustomizationPreset;
             BlueprintUnit unit = blueprintUnit;
             BlueprintUnit protoType = blueprintUnit.PrototypeLink as BlueprintUnit;
 
 
-            if (!Directory.Exists(Path.Combine(path2, presetName)))
-            {
-                Directory.CreateDirectory(Path.Combine(path2, presetName));
-            }
             int pf = 0;
             string fileName = "";
 
-            foreach (UnitEntityData u in Game.Instance.DialogController.InvolvedUnits)
+            if (string.IsNullOrEmpty(customPrefabGuid))
+            {
+                customPrefabGuid = protoType.Prefab.AssetId;
+            }
+            
+
+
+            UnitEntityView unitEntityView = ResourcesLibrary.TryGetResource<UnitEntityView>(customPrefabGuid, false);
+
+            if (unitEntityView != null && unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Count() > 0)
+            {
+
+                foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+
+                {
+
+                    if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
+                    {
+
+                        if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)
+                        {
+                            Main.Init();
+                        }
+
+                        if (Main.texOnDiskInfoList.Keys.Any(key => key.Contains(!string.IsNullOrEmpty(smr.material?.mainTexture?.name) ? smr.material?.mainTexture?.name : "noname")))
+                        {
+
+                            fileName = smr.material.mainTexture.name;
+
+                            Main.DebugLog("rp: "+fileName);
+                        }
+                    }
+                }
+            }
+
+                /*            foreach (UnitEntityData u in Game.Instance.DialogController.InvolvedUnits)
             {
                 if (u.Blueprint.name == unit.name)
                 {
@@ -173,7 +211,7 @@ namespace NpcHQTextures
                         fileName = u.View.name;
                     }
                 }
-            }
+            }*/
 
             if (preset.Units.Contains(protoType) || preset.Units.Contains(unit))
             {

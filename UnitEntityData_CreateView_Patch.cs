@@ -24,7 +24,7 @@ namespace NpcHQTextures
 		{
             if (!Main.modEnabled)
             {
-                return false;
+                return true;
             }
             Polymorph activePolymorph = __instance.GetActivePolymorph();
             if (activePolymorph != null)
@@ -39,7 +39,7 @@ namespace NpcHQTextures
                     string texfullpath = "";
                     if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
                     {
-                        texfullpath = Main.randomPool(__instance.Blueprint);
+                        texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
                     }
 
                     unitEntityView2 = Main.unitEntityViewTexReplacer(unitEntityView2, texfullpath);
@@ -60,7 +60,7 @@ namespace NpcHQTextures
                 string texfullpath = "";
                 if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
                 {
-                    texfullpath = Main.randomPool(__instance.Blueprint);
+                    texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
                 }
 
                 unitEntityView3 = Main.unitEntityViewTexReplacer(unitEntityView3, texfullpath);
@@ -85,7 +85,7 @@ namespace NpcHQTextures
                 string texfullpath = "";
                 if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
                 {
-                    texfullpath = Main.randomPool(__instance.Blueprint);
+                    texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
                 }
 
                 unitEntityView4 = Main.unitEntityViewTexReplacer(unitEntityView4, texfullpath);
