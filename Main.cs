@@ -66,7 +66,7 @@ namespace NpcHQTextures
                             Main.Init();
                         }
 
-                        if (Main.texOnDiskInfoList.Keys.Any(key => key.Contains(!string.IsNullOrEmpty(smr.material?.mainTexture?.name) ? smr.material?.mainTexture?.name : "noname")))
+                        if (Main.texOnDiskInfoList.Keys.Any(key => key.Contains(smr.material?.mainTexture?.name)))
                         {
 
                             if (string.IsNullOrEmpty(texfullpath))
@@ -81,6 +81,10 @@ namespace NpcHQTextures
                         }
                     }
                 }
+
+                string tname = "noname";
+
+                string anyInMesh = "false";
 
                 if (!string.IsNullOrEmpty(texfullpath) && !string.IsNullOrEmpty(origtexname))
                 {
@@ -127,15 +131,31 @@ namespace NpcHQTextures
                         if (texture2D != null)
                         {
 
-                            string tname = "none";
 
-                            unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => ((tname = x.material.mainTexture.name) == origtexname)).material.mainTexture = readableText;
+                            
 
-                          //  Main.DebugLog(tname);
+                                if (unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Any(x => (tname = x.material?.mainTexture?.name) == origtexname))
+                            {
+                               // string tname2 = "stillno";
+                                anyInMesh = "true";
+
+
+                                foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+                                {
+                                    if(smr.material?.mainTexture?.name == origtexname)
+                                    {
+                                        smr.material.mainTexture = readableText;
+                                    }
+
+                                }
+
+                                //unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => (tname2 = x.material.mainTexture.name) == origtexname).material.mainTexture = readableText;
+                               // Main.DebugLog(tname2);
+                            }
 
                         }
                     }
-                    catch (Exception x) { Main.DebugLog(x.ToString()); }
+                    catch (Exception x) { Main.DebugLog("Caught: (" + origtexname + " - " + tname + " - " + anyInMesh+") " + x.ToString()); }
                 }
 
             }
@@ -147,12 +167,29 @@ namespace NpcHQTextures
         public static string randomPool(BlueprintUnit blueprintUnit, string customPrefabGuid)
         {
 
-            string path2 = Main.hqTexPath;
+            string path2 = Path.Combine(Main.hqTexPath,"RandomPool");
 
-           // string texfullpath = "";
-            string presetName = blueprintUnit.CustomizationPreset.name;
+            // string texfullpath = "";
+
+        
+            string presetName = "";
+            if (blueprintUnit.CustomizationPreset != null)
+            {
+                presetName = blueprintUnit.CustomizationPreset.name;
+            }
+            else
+            {
+                return "";
+            }
+
+  
             UnitCustomizationPreset preset = blueprintUnit.CustomizationPreset;
+
+          
             BlueprintUnit unit = blueprintUnit;
+
+
+
             BlueprintUnit protoType = blueprintUnit.PrototypeLink as BlueprintUnit;
 
 
@@ -161,11 +198,12 @@ namespace NpcHQTextures
 
             if (string.IsNullOrEmpty(customPrefabGuid))
             {
+       
+
                 customPrefabGuid = protoType.Prefab.AssetId;
             }
-            
 
-
+   
             UnitEntityView unitEntityView = ResourcesLibrary.TryGetResource<UnitEntityView>(customPrefabGuid, false);
 
             if (unitEntityView != null && unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Count() > 0)
@@ -188,30 +226,13 @@ namespace NpcHQTextures
 
                             fileName = smr.material.mainTexture.name;
 
-                            Main.DebugLog("rp: "+fileName);
+                           // Main.DebugLog("rp: "+fileName);
                         }
                     }
                 }
             }
 
-                /*            foreach (UnitEntityData u in Game.Instance.DialogController.InvolvedUnits)
-            {
-                if (u.Blueprint.name == unit.name)
-                {
-                    if (!u.View.name.Contains("(Clone)") && u.View.CharacterAvatar != null && u.View.CharacterAvatar.BakedCharacter != null && !string.IsNullOrEmpty(u.View.CharacterAvatar.BakedCharacter.name) && u.View.CharacterAvatar.BakedCharacter.name.StartsWith("0"))
-                    {
-                        fileName = u.View.CharacterAvatar.BakedCharacter.name;
-                    }
-                    else if (u.View.name.Contains("(Clone)"))
-                    {
-                        fileName = u.View.name.Substring(0, u.View.name.Length - "(Clone)".Length);
-                    }
-                    else
-                    {
-                        fileName = u.View.name;
-                    }
-                }
-            }*/
+ 
 
             if (preset.Units.Contains(protoType) || preset.Units.Contains(unit))
             {
@@ -420,9 +441,37 @@ namespace NpcHQTextures
                 Main.DebugLog("variation is not in preset");
             }
 
-            string dirInPreset = Path.Combine(presetName, pf.ToString(), fileName);
 
-            string fileFullPath = Path.Combine(path2, dirInPreset + ".png");
+            string fileFullPath = "";
+
+            //DirectoryInfo variationdir = new DirectoryInfo(Path.Combine(presetName, pf.ToString()));
+
+
+            List<string> files = Directory.GetFiles(Path.Combine(path2, presetName, pf.ToString())).ToList();
+
+            foreach (string path in files)
+            {
+                
+
+
+                if (path.Contains(fileName))
+                {
+
+                    if (Main.texOnDiskInfoList.Keys.Any(key => key.Equals(path)))
+                    {
+                        fileFullPath = Main.texOnDiskInfoList.Keys.First(key => key.Equals(path));
+                    }
+
+           
+                    return fileFullPath;
+                }
+                
+            }
+            fileFullPath = "";
+
+            //string dirInPreset = Path.Combine(presetName, pf.ToString(), fileName);
+
+            //string fileFullPath = Path.Combine(path2, dirInPreset + ".png");
 
             return fileFullPath;
 

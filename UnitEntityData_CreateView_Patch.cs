@@ -37,7 +37,7 @@ namespace NpcHQTextures
                     UnitEntityView unitEntityView2 = UnityEngine.Object.Instantiate<UnitEntityView>(unitEntityView, __instance.Position, rotation);
 
                     string texfullpath = "";
-                    if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
+                    if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid)&& __instance.Blueprint != null)
                     {
                         texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
                     }
@@ -58,7 +58,7 @@ namespace NpcHQTextures
                 unitEntityView3.transform.rotation = Quaternion.Euler(0f, __instance.Orientation, 0f);
 
                 string texfullpath = "";
-                if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
+                if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid) && __instance.Blueprint != null)
                 {
                     texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
                 }
@@ -83,7 +83,7 @@ namespace NpcHQTextures
             {
 
                 string texfullpath = "";
-                if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
+                if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid) && __instance.Blueprint != null)
                 {
                     texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
                 }
