@@ -48,7 +48,7 @@ namespace NpcHQTextures
                         isprefab2 = true;
 
                         Tuple<string, string> result2 = new Tuple<string, string>("", "");
-                               if (__instance.Blueprint.CustomizationPreset != null)
+                               if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
                         {
 
                             result2 = Main.randomPool(__instance.Blueprint, unitEntityView);
@@ -68,7 +68,7 @@ namespace NpcHQTextures
                         Tuple<string, string> result = new Tuple<string, string>("", "");
       
                         
-                        if (__instance.Blueprint.CustomizationPreset != null)
+                        if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
                         {
 
                             result = Main.randomPool(__instance.Blueprint, unitEntityView2);
@@ -116,7 +116,7 @@ namespace NpcHQTextures
 
                 Tuple<string, string> result = new Tuple<string, string>("", "");
                 //if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
-                if (__instance.Blueprint.CustomizationPreset != null)
+                if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
                 {
 
                     result = Main.randomPool(__instance.Blueprint, unitEntityView3);
@@ -149,7 +149,7 @@ namespace NpcHQTextures
                 isprefab = true;
 
                 Tuple<string, string> result2 = new Tuple<string, string>("", "");
-                if (__instance.Blueprint.CustomizationPreset != null)
+                if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
                 {
 
                     result2 = Main.randomPool(__instance.Blueprint, unitEntityView4);
@@ -174,7 +174,7 @@ namespace NpcHQTextures
                 Tuple<string, string> result = new Tuple<string, string>("", "");
 
 
-                if (__instance.Blueprint.CustomizationPreset != null)
+                if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
                 {
 
                     result = Main.randomPool(__instance.Blueprint, resultView);
