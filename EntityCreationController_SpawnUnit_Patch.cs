@@ -35,17 +35,21 @@ namespace NpcHQTextures
             if (unit.CustomizationPreset != null)
             {
                 // Main.DebugLog("a");
+                     
                 UnitCustomizationVariation unitCustomizationVariation;
-                /*if (!first)
-                {*/
-                    unitCustomizationVariation = unit.CustomizationPreset.SelectVariation(unit, null);
+#if DEBUG
+                if (!first)
+                {
+                unitCustomizationVariation = unit.CustomizationPreset.SelectVariation(unit, null);
 
 
-                /*}
+                }
                 else
                 {
                     unitCustomizationVariation = Main.preset;
-                }*/
+                }
+#endif
+                unitCustomizationVariation = unit.CustomizationPreset.SelectVariation(unit, null);
 
                 if (unitCustomizationVariation == null)
                 {
@@ -225,12 +229,15 @@ namespace NpcHQTextures
 
             Main.DebugLog("SpawnUnit(): Main.OrigTexName: " + Main.OrigTexName);
 
+#if DEBUG
+    
+
             if (unit.AddFacts.Length > 0)
             {
                 Array.Clear(unit.AddFacts, 0, unit.AddFacts.Length);
 
             }
-
+#endif
 
 
 

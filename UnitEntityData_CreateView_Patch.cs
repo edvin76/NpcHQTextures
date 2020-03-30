@@ -27,7 +27,11 @@ namespace NpcHQTextures
                 return true;
             }
 
-            
+            if(Main.customPrefabUnits == null || Main.customPrefabUnits.Count() ==0)
+            {
+
+                Main.Init();
+            }
            
 
             Main.DebugLog("CreateView() -  " + __instance.Blueprint.CharacterName + " - " + __instance.Blueprint.name + " - " + __instance.Blueprint.AssetGuid);
