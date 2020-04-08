@@ -97,6 +97,13 @@ namespace NpcHQTextures
                     unitEntityView2.DisableSizeScaling = true;
   //                  Main.DebugLog("1 " + unitEntityView2.name);
                     __result = unitEntityView2;
+
+                   // Main.OrigTexName = null;
+                   // Main.ReadableText = null;
+
+
+                    Main.preset = null;
+                    Main.notRandom = false;
                     return false;
                 }
             }
@@ -131,6 +138,12 @@ namespace NpcHQTextures
 
 
                 __result = unitEntityView3;
+               // Main.OrigTexName = null;
+               // Main.ReadableText = null;
+
+
+                Main.preset = null;
+                Main.notRandom = false;
                 return false;
             }
             UnitEntityView unitEntityView4 = (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid)) ? ResourcesLibrary.TryGetResource<UnitEntityView>(__instance.Descriptor.CustomPrefabGuid, false) : __instance.Blueprint.Prefab.Load(false);
@@ -141,6 +154,12 @@ namespace NpcHQTextures
                 UberDebug.LogError(__instance.Blueprint, "Cannot find prefab for unit", Array.Empty<object>());
 
                 __result = null;
+               // Main.OrigTexName = null;
+              //  Main.ReadableText = null;
+
+
+                Main.preset = null;
+                Main.notRandom = false;
                 return false;
 
             }
@@ -189,7 +208,12 @@ namespace NpcHQTextures
 
 
             __result = resultView;
+         //   Main.OrigTexName = null;
+           // Main.ReadableText = null;
 
+
+            Main.preset = null;
+            Main.notRandom = false;
 
             return false;
 		}

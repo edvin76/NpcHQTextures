@@ -30,7 +30,7 @@ namespace NpcHQTextures
             {
 
                 Main.DebugLog("Trying to spawn null unit");
-                return false;
+                return true;
             }
             if (unit.CustomizationPreset != null)
             {
@@ -58,10 +58,13 @@ namespace NpcHQTextures
 
                     Main.DebugLog($"Failed to select customization variation for unit {unit.name} (preset = {unit.CustomizationPreset.name})");
 
+                    if(Main.allVariations == null || Main.allVariations.Count() == 0)
+                    {
+                        Main.Init();
+                    }
 
-   
 
-                    if (Main.allVariations.ContainsKey(unit.Prefab))
+                        if (Main.allVariations.ContainsKey(unit.Prefab))
                     {
                         //ucv.Prefab == blueprintUnit.Prefab
                         Main.preset = Main.allVariations[unit.Prefab];
@@ -163,11 +166,23 @@ namespace NpcHQTextures
             {
 
                 Main.DebugLog("Trying to spawn null unit.");
+               // Main.OrigTexName = null;
+             //   Main.ReadableText = null;
+
+
+                Main.preset = null;
+                Main.notRandom = false;
                 return true;
             }
             if (prefab == null)
             {
                 Main.DebugLog("Trying to spawn unit without prefab");
+               // Main.OrigTexName = null;
+               // Main.ReadableText = null;
+
+
+                Main.preset = null;
+                Main.notRandom = false;
                 return true;
             }
 
@@ -227,11 +242,11 @@ namespace NpcHQTextures
 
             //  unitEntityView.Destroy();
 
-            Main.DebugLog("SpawnUnit(): Main.OrigTexName: " + Main.OrigTexName);
+
 
 #if DEBUG
     
-
+            Main.DebugLog("SpawnUnit(): Main.OrigTexName: " + Main.OrigTexName);
             if (unit.AddFacts.Length > 0)
             {
                 Array.Clear(unit.AddFacts, 0, unit.AddFacts.Length);
@@ -265,13 +280,12 @@ namespace NpcHQTextures
                 }
 
             }
-        
-             
+          Main.OrigTexName = null;
              */
 
 
-            Main.OrigTexName = null;
-            Main.ReadableText = null;
+
+           // Main.ReadableText = null;
 
 
             Main.preset = null;

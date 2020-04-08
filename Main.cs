@@ -24,8 +24,9 @@ namespace NpcHQTextures
         public static Dictionary<string, Vector2Int> texOnDiskInfoList;
 
 
-        
-        public static string hqTexPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Mods","NpcHQTextures","HQTex");
+
+        public static string hqTexPath = Path.Combine(UnityModManager.modsPath, "NpcHQTextures","HQTex");
+            //Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Mods","NpcHQTextures","HQTex");
 
 
         public static Dictionary<string, string> customPrefabUnits;
@@ -220,7 +221,7 @@ namespace NpcHQTextures
 
                 if (!string.IsNullOrEmpty(texfullpath) && !string.IsNullOrEmpty(origtexname))
                 {
-                    Main.OrigTexName = origtexname;
+                 //   Main.OrigTexName = origtexname;
 
                     //    Main.DebugLog("2");
 
@@ -266,7 +267,7 @@ namespace NpcHQTextures
 
                         if (texture2D != null)
                         {
-                            Main.ReadableText = readableText;
+                           // Main.ReadableText = readableText;
                             // Main.DebugLog("3");
 
                             //   if (unitEntityView.CharacterAvatar != null)
@@ -348,9 +349,15 @@ namespace NpcHQTextures
 
             }
 
-            if (Main.notRandom)
+            if (Main.allVariations == null || Main.allVariations.Count() == 0)
             {
-                Main.DebugLog("not random from spawnunit0");
+                Main.Init();
+            }
+
+            //if (Main.notRandom)
+            if(!Main.allVariations.Keys.ToList().Any(x => x.Load() == unitEntityView) && !Main.allVariations.ContainsKey(blueprintUnit.Prefab))
+            {
+                Main.DebugLog("not random in any lowest level prefab even");
                 return Tuple.Create("", "");
 
             }
@@ -466,7 +473,7 @@ namespace NpcHQTextures
 
 
                     // || ucv.Prefab.Load().Blueprint.AssetGuid == unitEntityView.Blueprint.AssetGuid)
-                    if (ucv.Prefab == Main.preset?.Prefab || ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
+                    if (/*ucv.Prefab == Main.preset?.Prefab ||*/ ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
                     {
                         Main.DebugLog($"preset.name: {preset.name}");
                         Main.DebugLog($"UnitVariations index: {pf}");
@@ -501,7 +508,7 @@ namespace NpcHQTextures
                         foreach (UnitCustomizationVariation ucv in uvs.Variations)
                         {
 
-                            if (ucv.Prefab == Main.preset?.Prefab || ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
+                            if (/*ucv.Prefab == Main.preset?.Prefab || */ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
                             {
                                 //newpreset = preset2;
                                 presetName = preset2.name;
