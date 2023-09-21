@@ -12,6 +12,9 @@ using Kingmaker.View;
 using Kingmaker.EntitySystem.Entities;
 using Kingmaker.UnitLogic.Customization;
 using Kingmaker.ResourceLinks;
+using Kingmaker.Globalmap.Blueprints;
+using Kingmaker.Controllers.GlobalMap;
+using Kingmaker.GameModes;
 
 namespace NpcHQTextures
 {
@@ -20,23 +23,101 @@ namespace NpcHQTextures
 #endif
     public class Main
     {
+        public static bool kingmakerLoaded = false;
 
-        public static Dictionary<string, Vector2Int> texOnDiskInfoList;
+        [Harmony12.HarmonyPatch(typeof(LibraryScriptableObject), "LoadDictionary")]
+        public static class LibraryScriptableObject_LoadDictionary_Patch
+        {
+            static void Postfix(LibraryScriptableObject __instance)
+            {
+                if (!Main.modEnabled)
+                    return;
+
+                if(!kingmakerLoaded)
+                    Main.Init();
+                
+                kingmakerLoaded = true;
+                
+
+                //  Main.SafeLoad(new Action(Main.Init), "Example1 of Startup Asset Load Here");
+            }
+        }
+
+
+        static bool Load(UnityModManager.ModEntry modEntry)
+        {
+
+
+            try
+            {
+
+                Main.harmonyInstance = HarmonyInstance.Create(modEntry.Info.Id);
+
+                Main.logger = modEntry.Logger;
+                Main.modEnabled = modEntry.Active;
+
+
+                modEntry.OnToggle = new Func<UnityModManager.ModEntry, bool, bool>(Main.OnToggle);
+                modEntry.OnGUI = new Action<UnityModManager.ModEntry>(Main.OnGUI);
+
+
+                modEntry.OnUnload = new Func<UnityModManager.ModEntry, bool>(Main.Unload);
+
+            }
+            catch (Exception ex)
+            {
+                DebugError(ex);
+                throw ex;
+            }
+
+            
+            if (!Main.ApplyPatch(typeof(EntityCreationController_SpawnUnit0_Patch), "EntityCreationController_SpawnUnit0_Patch"))
+            {
+                DebugLog("Failed to patch EntityCreationController_SpawnUnit0_Patch");
+            }
+            
+            
+            if (!Main.ApplyPatch(typeof(EntityCreationController_SpawnUnit_Patch), "EntityCreationController_SpawnUnit_Patch_Patch"))
+            {
+                DebugLog("Failed to patch EntityCreationController_SpawnUnit");
+            }
+            
+            if (!Main.ApplyPatch(typeof(UnitEntityData_CreateView_Patch), "UnitEntityData_CreateView_Patch"))
+            {
+                DebugLog("Failed to patch UnitEntityData_CreateView");
+            }
+            
+            if (!Main.ApplyPatch(typeof(LibraryScriptableObject_LoadDictionary_Patch), "Run once startup hook"))
+            {
+                DebugLog("Failed to patch LibraryScriptableObject_LoadDictionary");
+            }
+
+            hqTexPath = Path.Combine(UnityModManager.modsPath, Main.harmonyInstance.Id, "HQTex");
+
+            if(kingmakerLoaded)
+                Main.Init();
+
+
+            return true;
+        }
 
 
 
-        public static string hqTexPath = Path.Combine(UnityModManager.modsPath, "NpcHQTextures","HQTex");
-            //Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Mods","NpcHQTextures","HQTex");
 
 
-        public static Dictionary<string, string> customPrefabUnits;
-        public static Dictionary<UnitViewLink, UnitCustomizationVariation> allVariations;
-
-
-
-        public static bool notRandom = false;
         public static void Init()
         {
+
+
+
+
+
+
+
+
+            //Main.DebugLog($"Prefabs / BlueprintUnits: {i.ToString()}/{blueprintUnits.Count().ToString()}");
+
+
 
             Main.texOnDiskInfoList = new Dictionary<string, Vector2Int>();
 
@@ -44,7 +125,7 @@ namespace NpcHQTextures
 
             List<string> texturePathList = Directory.GetFiles(hqDir, "*.png", SearchOption.AllDirectories).Where(d => !d.Contains(@"/-/") && !d.Contains(@"\-\") && !d.Contains(@"014x")).ToList();
 
-            Main.DebugLog(texturePathList.Count().ToString());
+            //  Main.DebugLog(texturePathList.Count().ToString());
 
 
 
@@ -52,7 +133,7 @@ namespace NpcHQTextures
 
             Main.customPrefabUnits = new Dictionary<string, string>();
             Main.allVariations = new Dictionary<UnitViewLink, UnitCustomizationVariation>();
-      
+
 
             List<UnitCustomizationPreset> presets = ResourcesLibrary.GetBlueprints<UnitCustomizationPreset>().ToList();
 
@@ -72,7 +153,7 @@ namespace NpcHQTextures
 
                 }
 
-                
+
                 foreach (UnitVariations uvs in preset.UnitVariations)
                 {
                     foreach (UnitCustomizationVariation ucv in uvs.Variations)
@@ -80,7 +161,7 @@ namespace NpcHQTextures
                         if (!allVariations.ContainsKey(ucv.Prefab))
                         {
                             allVariations.Add(ucv.Prefab, ucv);
-                 
+
 
                         }
                         else
@@ -89,14 +170,224 @@ namespace NpcHQTextures
                         }
                     }
                 }
-                
+
 
             }
 
 
+            List<BlueprintUnit> blueprintUnits = ResourcesLibrary.GetBlueprints<BlueprintUnit>().ToList();
+
+            int i = 0;
+            foreach (BlueprintUnit blueprintUnit1 in blueprintUnits)
+            {
+
+
+                if (blueprintUnit1.CustomizationPreset != null && !allVariations.ContainsKey(blueprintUnit1.Prefab))
+                {
+                    UnitEntityView unitEntityView = ResourcesLibrary.TryGetResource<UnitEntityView>(blueprintUnit1.Prefab.AssetId, false);
+
+                    if (unitEntityView != null && unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Count() > 0)
+                    {
+
+                        foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+                        {
+
+                            if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
+                            {
+                                if (smr.material.mainTexture.name.StartsWith("0"))
+                                {
+                                    Main.DebugLog("total: " + smr.material.mainTexture.name);
+
+                                    // saveTex(ensureUniqueFileName(Path.Combine(Main.hqTexPath, "-", blueprintUnit1.name +" - "+smr.material.mainTexture.name+".png")), smr.material.mainTexture as Texture2D);
+                                }
+
+                            }
+                        }
+                    }
+                }
+
+            }
+
 
         }
 
+
+
+
+        private static void OnGUI(UnityModManager.ModEntry modEntry)
+        {
+            GUILayoutOption[] noExpandwith = new GUILayoutOption[]
+             {
+                GUILayout.ExpandWidth(false)
+             };
+            GUILayout.Label("<b>OK: new version</b>" + hqTexPath, noExpandwith);
+
+            if (Game.Instance.CurrentMode == GameModeType.GlobalMap)
+            {
+                GUILayout.BeginHorizontal(Array.Empty<GUILayoutOption>());
+                if (GUILayout.Button("A button of mysterious function", GUILayout.Width(200f), GUILayout.Height(20f)))
+                {
+
+                    int CR = Game.Instance.Player.GlobalMap.CurrentRegionCR + 1;
+
+                    BlueprintRandomEncounter blueprintRandomEncounter = RandomEncounterSelector.SelectEncounter(CR, false, false);
+                    // Main.DebugLog("1");
+                    //MapTravelData travelData = RandomEncountersController.State.TravelData;
+                    //Main.DebugLog("2");
+                    //GlobalMapEdge edgeObject = GlobalMapRules.Instance.GetEdgeObject(travelData.CurrentEdge.Blueprint);
+                    //Main.DebugLog("3");
+                    //BlueprintRandomEncounter blueprintRandomEncounter = RandomEncounterSelector.TrySelect(edgeObject, CR, false);
+                    //Main.DebugLog("4");
+                    RandomEncounterData encounter = new RandomEncounterData(blueprintRandomEncounter, null);
+                    //Main.DebugLog("5");
+
+                    //Game.Instance.Player.GlobalMap.StartEncounter(encounter);
+
+                    //GlobalMapController.GlobalMapState.Player.StartEncounter(encounter);
+                    //RandomEncountersController.State.StartEncounter(encounter);
+
+                    Game.Instance.RandomEncountersController.StartEncounter(blueprintRandomEncounter, CR, null, false, false);
+                }
+                GUILayout.EndHorizontal();
+            }
+
+            if (Main.okPatches.Count > 0)
+            {
+                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
+
+                GUILayout.Label("<b>OK: Some patches apply:</b>", noExpandwith);
+
+                foreach (string str in Main.okPatches)
+                {
+                    GUILayout.Label("  • <b>" + str + "</b>", noExpandwith);
+                }
+                GUILayout.EndVertical();
+            }
+            if (Main.failedPatches.Count > 0)
+            {
+                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
+                GUILayout.Label("<b>Error: Some patches failed to apply. These features may not work:</b>", noExpandwith);
+                foreach (string str2 in Main.failedPatches)
+                {
+                    GUILayout.Label("  • <b>" + str2 + "</b>", noExpandwith);
+                }
+                GUILayout.EndVertical();
+            }
+            if (Main.okLoading.Count > 0)
+            {
+                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
+                GUILayout.Label("<b>OK: Some assets loaded:</b>", noExpandwith);
+                foreach (string str3 in Main.okLoading)
+                {
+                    GUILayout.Label("  • <b>" + str3 + "</b>", noExpandwith);
+                }
+                GUILayout.EndVertical();
+            }
+            if (Main.failedLoading.Count > 0)
+            {
+                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
+                GUILayout.Label("<b>Error: Some assets failed to load. Saves using these features won't work:</b>", noExpandwith);
+                foreach (string str4 in Main.failedLoading)
+                {
+                    GUILayout.Label("  • <b>" + str4 + "</b>", noExpandwith);
+                }
+                GUILayout.EndVertical();
+            }
+        }
+
+
+
+
+
+
+        public static Dictionary<string, Vector2Int> texOnDiskInfoList;
+
+
+
+        public static string hqTexPath;
+        //Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Mods","NpcHQTextures","HQTex");
+
+
+        public static Dictionary<string, string> customPrefabUnits;
+        public static Dictionary<UnitViewLink, UnitCustomizationVariation> allVariations;
+
+
+
+        public static bool notRandom = false;
+
+
+           /*
+        public static string ensureUniqueFileName(string path)
+        {
+            if (File.Exists(path))
+            {
+                int ix = 0;
+                string fileNamePathStub = Path.Combine(Directory.GetParent(path).FullName, Path.GetFileNameWithoutExtension(path) + "_");
+                string fileNamePath = null;
+                do
+                {
+                    ix++;
+                    fileNamePath = String.Format("{0}{1}{2}", fileNamePathStub, ix, ".png");
+                } while (File.Exists(fileNamePath));
+                return fileNamePath;
+            }
+            return path;
+        }
+        private static void saveTex(string fullpath, Texture2D texture)
+        {
+        
+
+            if (texture != null)
+            {
+
+                byte[] bytes = duplicateTexture(texture).EncodeToPNG();
+
+                //   ((line = reader.ReadLine()) != null)
+
+
+
+                File.WriteAllBytes(fullpath, bytes);
+                Main.DebugLog("Disk, The file was created successfully at " + fullpath);
+            }
+            else
+            {
+                Main.DebugLog("Disk, not created: " + fullpath);
+            }
+        }
+
+
+        private static Texture2D duplicateTexture(Texture2D source)
+        {
+
+
+            try
+            {
+                RenderTexture renderTex = RenderTexture.GetTemporary(
+                            source.width,
+                            source.height,
+                            0,
+                            RenderTextureFormat.Default,
+                            RenderTextureReadWrite.Linear);
+
+                Graphics.Blit(source, renderTex);
+                RenderTexture previous = RenderTexture.active;
+                RenderTexture.active = renderTex;
+
+                Texture2D readableText = new Texture2D(source.width, source.height);
+                readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+                readableText.Apply();
+                RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(renderTex);
+                return readableText;
+            }
+            catch (Exception e)
+            {
+
+                Main.DebugLog("dupliactor error: " + e);
+            }
+            return null;
+        }
+        */
         public static string OrigTexName = "";
 
         public static Texture2D ReadableText;
@@ -107,7 +398,10 @@ namespace NpcHQTextures
         {
 
 
-
+            if(texfullpath == "" || origtexname == "")
+            {
+                return unitEntityView;
+            };
 
             //  Main.DebugLog("a");
 
@@ -116,8 +410,7 @@ namespace NpcHQTextures
                 Main.DebugLog("unitEntityViewTexReplacer: unitEntityView has SkinnedMeshRenderer");
 
 
-
-                if (string.IsNullOrEmpty(origtexname))
+                    if (string.IsNullOrEmpty(origtexname))
                 {
                     foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
                     {
@@ -174,14 +467,15 @@ namespace NpcHQTextures
 
 
                                 Main.DebugLog("unitEntityViewTexReplacer smr: " + texfullpath);
-                                //  Main.DebugLog("unitEntityViewTexReplacer smr: " + origtexname);
+                                //Main.DebugLog("unitEntityViewTexReplacer smr: " + origtexname);
 
                                 break;
                             }
                         }
                     }
                 }
-                else if (string.IsNullOrEmpty(texfullpath))
+                
+               else  if (string.IsNullOrEmpty(texfullpath))
                 {
                     bool found = false;
                     foreach (string path in Main.texOnDiskInfoList.Keys)
@@ -215,95 +509,107 @@ namespace NpcHQTextures
 
                 string anyInMesh = "false";
 
-                // Main.DebugLog("1");
+                Main.DebugLog("texreplacer: "+ texfullpath +" - "+origtexname);
 
 
 
                 if (!string.IsNullOrEmpty(texfullpath) && !string.IsNullOrEmpty(origtexname))
                 {
-                 //   Main.OrigTexName = origtexname;
-
-                    //    Main.DebugLog("2");
-
-                    try
+                    if (File.Exists(texfullpath))
+                    //   Main.OrigTexName = origtexname;
                     {
+                        Main.DebugLog("texreplacer: FOUND!!!");
 
-                        byte[] array = File.ReadAllBytes(texfullpath);
-
-
-
-                        Vector2Int v2 = Main.texOnDiskInfoList[texfullpath];
-
-
-                        Texture2D texture2D = new Texture2D(v2.x, v2.y, TextureFormat.ARGB32, false);
-
-                        texture2D.filterMode = FilterMode.Point;
-
-
-                        texture2D.anisoLevel = 9;
-                        ImageConversion.LoadImage(texture2D, array);
-
-
-                        RenderTexture renderTex = RenderTexture.GetTemporary(
-                                             texture2D.width,
-                                             texture2D.height,
-                                             32,
-                                             RenderTextureFormat.ARGB32,
-                                             RenderTextureReadWrite.sRGB);
-
-                        renderTex.antiAliasing = 8;
-                        renderTex.anisoLevel = 9;
-                        renderTex.filterMode = FilterMode.Trilinear;
-                        Graphics.Blit(texture2D, renderTex);
-                        RenderTexture previous = RenderTexture.active;
-                        RenderTexture.active = renderTex;
-
-                        Texture2D readableText = new Texture2D(texture2D.width, texture2D.height);
-                        readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
-                        readableText.Apply();
-                        RenderTexture.active = previous;
-                        RenderTexture.ReleaseTemporary(renderTex);
-
-
-                        if (texture2D != null)
+                        try
                         {
-                           // Main.ReadableText = readableText;
-                            // Main.DebugLog("3");
 
-                            //   if (unitEntityView.CharacterAvatar != null)
-                            //   {
-
-                            //       Main.DebugLog("charav!");
-                            //   }
-                            //    else { Main.DebugLog("NO charav!"); }
+                            byte[] array = File.ReadAllBytes(texfullpath);
 
 
-                            if (unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Any(x => (tname = x.material?.mainTexture?.name) == origtexname))
+
+                            Vector2Int v2 = Main.texOnDiskInfoList[texfullpath];
+
+
+                            Texture2D texture2D = new Texture2D(v2.x, v2.y, TextureFormat.ARGB32, false);
+
+                            texture2D.filterMode = FilterMode.Point;
+
+
+                            texture2D.anisoLevel = 9;
+                            ImageConversion.LoadImage(texture2D, array);
+
+
+                            RenderTexture renderTex = RenderTexture.GetTemporary(
+                                                 texture2D.width,
+                                                 texture2D.height,
+                                                 32,
+                                                 RenderTextureFormat.ARGB32,
+                                                 RenderTextureReadWrite.sRGB);
+
+                            renderTex.antiAliasing = 8;
+                            renderTex.anisoLevel = 9;
+                            renderTex.filterMode = FilterMode.Trilinear;
+                            Graphics.Blit(texture2D, renderTex);
+                            RenderTexture previous = RenderTexture.active;
+                            RenderTexture.active = renderTex;
+
+                            Texture2D readableText = new Texture2D(texture2D.width, texture2D.height);
+                            readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+                            readableText.Apply();
+                            RenderTexture.active = previous;
+                            RenderTexture.ReleaseTemporary(renderTex);
+
+
+                            if (texture2D != null)
                             {
-                                // string tname2 = "stillno";
-                                anyInMesh = "true";
+                                // Main.ReadableText = readableText;
+                                Main.DebugLog("c");
+
+                                //   if (unitEntityView.CharacterAvatar != null)
+                                //   {
+
+                                //       Main.DebugLog("charav!");
+                                //   }
+                                //    else { Main.DebugLog("NO charav!"); }
 
 
-                                foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+                                if (unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Any(x => (tname = x.material?.mainTexture?.name) == origtexname))
                                 {
-                                    if (smr.material?.mainTexture?.name == origtexname)
-                                    {
+                                    // string tname2 = "stillno";
+                                    anyInMesh = "true";
 
-                                        smr.material.mainTexture = readableText;
-                                        smr.material.mainTexture.name = origtexname;
+
+                                    foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+                                    {
+                                        if (smr.material?.mainTexture?.name == origtexname)
+                                        {
+
+                                            smr.material.mainTexture = readableText;
+                                            smr.material.mainTexture.name = origtexname;
+                                        }
+
                                     }
 
+                                    Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
+                                    Main.DebugLog(texfullpath);
+
+                                    //   unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => (tname = x.material.mainTexture.name) == origtexname).material.mainTexture = readableText;
+                                    // Main.DebugLog(tname2);
+                                }
+                                else
+                                {
+                                    Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
                                 }
 
-                                //   unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => (tname = x.material.mainTexture.name) == origtexname).material.mainTexture = readableText;
-                                // Main.DebugLog(tname2);
+
                             }
-                            //   Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
-
-
                         }
+                        catch (Exception x) { Main.DebugLog("Caught: (" + origtexname + " - " + tname + " - " + anyInMesh + ") " + x.ToString()); }
+
+
                     }
-                    catch (Exception x) { Main.DebugLog("Caught: (" + origtexname + " - " + tname + " - " + anyInMesh + ") " + x.ToString()); }
+                    else
+                        Main.DebugLog("texreplacer: NOT found");
                 }
 
             }
@@ -318,13 +624,111 @@ namespace NpcHQTextures
             return unitEntityView;
         }
 
-        public static Tuple<string, string> randomPool(BlueprintUnit blueprintUnit, UnitEntityView unitEntityView)
+        public static string randomPool(BlueprintUnit blueprintUnit, UnitEntityView unitEntityView)
         {
 
+            
+
             string presetName = "";
-            UnitCustomizationPreset preset;
+            UnitCustomizationPreset preset = null;
+
+            Main.DebugLog("1");
+
+            
+            switch (blueprintUnit.name)
+           {
+
+                
+                case "BanditAdmirersShortie":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Bandits_CustomizationPreset", "3", "015_Halfling_Male_Diffuse_Atlas.png");
+                case "BaronationGuest":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Noble_CustomizationPreset", "1", "002_Human_Male_Diffuse_Atlas.png");
+                case "BaronationGuest_6":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Noble_CustomizationPreset", "4", "016_Halfling_Female_Diffuse_Atlas.png");
+                case "BossGodEmperor":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "BanditsCaster_CustomizationPreset", "1", "009_Gnome_Male_Diffuse_Atlas.png");
+                case "C51 - LinziQ3_Firebrand":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Bandits_CustomizationPreset 1", "4", "013_Human_Female_Diffuse_Atlas.png");
+                case "CR1_SpecialGnomeBanditFighterMelee_ThornRiverCamp":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Bandits_CustomizationPreset 1", "2", "027_Gnome_Male_Diffuse_Atlas.png");
+                case "DunswardVillageTrader":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Commoner_CustomizationPreset 1", "1", "004_Human_Male_Diffuse_Atlas.png");
+                case "GlenebonVillageTrader":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Commoner_CustomizationPreset 1", "1", "009_Human_Male_Diffuse_Atlas.png");
+                case "Priest_Ghost":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Commoner_CustomizationPreset 1", "1", "008_Human_Male_Diffuse_Atlas.png");
+                case "SilverstepVillageTrader":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Commoner_CustomizationPreset 1", "1", "011_Human_Female_Diffuse_Atlas.png");
+                case "StartingTrader":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Commoner_CustomizationPreset 1", "1", "002_Human_Male_Diffuse_Atlas.png");
+                case "MivonGuest":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Noble_CustomizationPreset", "3", "001_Human_Male_Diffuse_Atlas.png");
+                case "MivonGuest 1":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Noble_CustomizationPreset", "2", "001_Human_Male_Diffuse_Atlas.png");
+                case "PitaxTown_Trader 1":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Noble_CustomizationPreset", "4", "015_Halfling_Male_Diffuse_Atlas.png");
+                case "Poisoner":
+                    return Path.Combine(Main.hqTexPath, "RandomPool", "Bandits_CustomizationPreset 1", "5", "035_Halfling_Male_Diffuse_Atlas.png");
+
+
+                case "BaronationGuest_2":
+                    //004_Human_Female_Diffuse_Atlas (square shapes leather wizard)
+                    return "";
+                case "BaronationGuest_5":
+                    //035_HalfOrc_Male_Diffuse_Atlas (red-blue stripes "merchant")
+                    return "";
+                case "BaronationGuest_7":
+                    //015_Human_Female_Diffuse_Atlas (yellow robe)
+                    return "";
+                case "BaronationGuest_9":
+                    //007_Human_Male_Diffuse_Atlas (red-blue stripes "merchant")
+                    return "";
+                case "BaronationGuest_11":
+                    //013_HalfOrc_Male_Diffuse_Atlas (square shapes leather wizard)
+                    return "";
+                case "BossFallenPriest":
+                    //011_Human_Female_Diffuse_Atlas (plate armor wizard)
+                    return "";
+                case "BossSlaver":
+                    //003_Human_Male_Diffuse_Atlas (red robe wizard)
+                    return "";
+                case "KamelandsVillageTrader":
+                    //009_Gnome_Male_Diffuse_Atlas (green shirt commoner)
+                    return "";
+                case "OutskirtsVillageTrader":
+                    //011_Dwarf_Male_Diffuse_Atlas (white shirt commoner)
+                    return "";
+                case "PitaxTown_Trader 2":
+                    //043_Aasimar_Male_Diffuse_Atlas (gold blue stripes noble)
+                    return "";
+                case "PitaxTown_Trader 3":
+                    //019_Dwarf_Male_Diffuse_Atlas (red robe wizard)
+                    return "";
+                case "SouthNarlmarchesVillageTrader":
+                    //006_Dwarf_Female_Diffuse_Atlas (square shapes leather wizard)
+                    return "" ;
+
+
+
+
+
+            }
+
+            Main.DebugLog("2");
+
+            bool norandom = false;
+
+            if (Main.customPrefabUnits == null)
+            {
+                Main.DebugLog("doh...");
+
+                Main.Init();
+            }
+
             if (blueprintUnit.CustomizationPreset != null)
             {
+                Main.DebugLog("3");
+
                 presetName = blueprintUnit.CustomizationPreset.name;
 
                 preset = blueprintUnit.CustomizationPreset;
@@ -334,6 +738,7 @@ namespace NpcHQTextures
             }
             else if (Main.customPrefabUnits.ContainsKey(blueprintUnit.name))
             {
+               Main.DebugLog("4");
 
                 preset = ResourcesLibrary.TryGetBlueprint<UnitCustomizationPreset>(Main.customPrefabUnits[blueprintUnit.name]);
 
@@ -343,33 +748,44 @@ namespace NpcHQTextures
             }
             else
             {
-                Main.DebugLog("not in preset");
-                return Tuple.Create("", "");
+                Main.DebugLog("5");
+
+                if (Main.allVariations == null || Main.allVariations.Count() == 0)
+                {
+                    Main.Init();
+                }
+
+                Main.DebugLog("6");
+
+                //if (Main.notRandom)
+                if (!Main.allVariations.Keys.ToList().Any(x => x.Load() == unitEntityView) && !Main.allVariations.ContainsKey(blueprintUnit.Prefab))
+                {
+                    Main.DebugLog("not random in any lowest level prefab even");
+                    norandom = true;
+
+                }
+
 
 
             }
+
+            Main.DebugLog("7");
+
 
             if (Main.allVariations == null || Main.allVariations.Count() == 0)
             {
                 Main.Init();
             }
 
-            //if (Main.notRandom)
-            if(!Main.allVariations.Keys.ToList().Any(x => x.Load() == unitEntityView) && !Main.allVariations.ContainsKey(blueprintUnit.Prefab))
-            {
-                Main.DebugLog("not random in any lowest level prefab even");
-                return Tuple.Create("", "");
 
-            }
-
-
+            Main.DebugLog("8");
 
 
             Main.DebugLog("randomPool() -  " + blueprintUnit.CharacterName + " - " + blueprintUnit.name + " - " + blueprintUnit.AssetGuid);
 
             string path2 = Path.Combine(Main.hqTexPath, "RandomPool");
 
-            //Main.DebugLog($"path2: {path2}");
+            Main.DebugLog($"path2: {path2}");
 
             // string texfullpath = "";
 
@@ -383,7 +799,7 @@ namespace NpcHQTextures
 
 
 
-            BlueprintUnit protoType = blueprintUnit.PrototypeLink as BlueprintUnit;
+         //   BlueprintUnit protoType = blueprintUnit.PrototypeLink as BlueprintUnit;
 
 
 
@@ -407,7 +823,7 @@ namespace NpcHQTextures
 
             //unitEntityView = ResourcesLibrary.TryGetResource<UnitEntityView>(unitEntityView.EntityData.Descriptor.Blueprint.Prefab.AssetId, false);
 
-            // UnitEntityView unitEntityView = ResourcesLibrary.TryGetResource<UnitEntityView>(customPrefabGuid, false);
+
 
             if (unitEntityView != null && unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Count() > 0)
             {
@@ -418,10 +834,11 @@ namespace NpcHQTextures
 
                     if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
                     {
-
+                        if (norandom)
+                            return Path.Combine(Main.hqTexPath, smr.material?.mainTexture?.name+".png");
                         //  Main.DebugLog($"smr.material.mainTexture.name: {smr.material.mainTexture.name}");
                         // Main.DebugLog($"texOnDiskInfoList.Count(): {Main.texOnDiskInfoList.Count().ToString()}");
-                          if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)
+                        if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)
                           {
                               Main.Init();
                           }
@@ -459,40 +876,44 @@ namespace NpcHQTextures
                 }
             }
 
-
+            Main.DebugLog("9");
 
             int pf = 0;
             bool stop = false;
-            foreach (UnitVariations uvs in preset.UnitVariations)
+            if (preset != null)
             {
-
-                pf++;
-
-                foreach (UnitCustomizationVariation ucv in uvs.Variations)
+                foreach (UnitVariations uvs in preset.UnitVariations)
                 {
 
+                    pf++;
 
-                    // || ucv.Prefab.Load().Blueprint.AssetGuid == unitEntityView.Blueprint.AssetGuid)
-                    if (/*ucv.Prefab == Main.preset?.Prefab ||*/ ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
+                    foreach (UnitCustomizationVariation ucv in uvs.Variations)
                     {
-                        Main.DebugLog($"preset.name: {preset.name}");
-                        Main.DebugLog($"UnitVariations index: {pf}");
-                        Main.DebugLog(ucv.Prefab.Load().name);
-                        stop = true;
-                        break;
 
+
+                        // || ucv.Prefab.Load().Blueprint.AssetGuid == unitEntityView.Blueprint.AssetGuid)
+                        if (/*ucv.Prefab == Main.preset?.Prefab ||*/ ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
+                        {
+                            Main.DebugLog($"preset.name: {preset.name}");
+                            Main.DebugLog($"UnitVariations index: {pf}");
+                            Main.DebugLog(ucv.Prefab.Load().name);
+                            stop = true;
+                            break;
+
+                        }
                     }
-                }
-                if (stop) { break; }
+                    if (stop) { break; }
 
+                }
             }
+            Main.DebugLog("10");
 
             if (!stop)
             {
 
                 List<UnitCustomizationPreset> presets = ResourcesLibrary.GetBlueprints<UnitCustomizationPreset>().ToList();
 
-                foreach (UnitCustomizationPreset preset2 in presets.Where(x => !x.name.Equals(preset.name)))
+                foreach (UnitCustomizationPreset preset2 in presets.Where(x => !x.name.Equals(preset?.name)))
                 {
 
                     //unitCustomizationVariation = preset.SelectVariation(unit, null);
@@ -567,11 +988,13 @@ namespace NpcHQTextures
 
             }
 
+            Main.DebugLog("11");
+
             if (!stop)
             {
 
                 Main.DebugLog("not random");
-                return Tuple.Create("", "");
+                return "";
 
             }
 
@@ -585,6 +1008,8 @@ namespace NpcHQTextures
             List<string> files = Directory.GetFiles(Path.Combine(path2, presetName, pf.ToString())).ToList();
 
             //   Main.DebugLog($"files in {Path.Combine(path2, presetName, pf.ToString())}: {files.Count().ToString()}");
+
+            Main.DebugLog("12");
 
             foreach (string path in files)
             {
@@ -600,19 +1025,21 @@ namespace NpcHQTextures
                         fileFullPath = Main.texOnDiskInfoList.Keys.First(key => key.Equals(path));
                     }
 
-                    Main.DebugLog($"fileFullPath: {fileFullPath}");
+                   // Main.DebugLog($"fileFullPath: {fileFullPath}");
                     //return fileFullPath;
-                    return Tuple.Create(fileFullPath, fileName);
+                    return fileFullPath;
                 }
 
             }
-            fileFullPath = "";
+            fileFullPath = Path.Combine(Main.hqTexPath, fileName);
+
+            Main.DebugLog("13");
 
             //string dirInPreset = Path.Combine(presetName, pf.ToString(), fileName);
 
             //string fileFullPath = Path.Combine(path2, dirInPreset + ".png");
 
-            return Tuple.Create(fileFullPath, fileName);
+            return fileFullPath;
         }
 
         public static UnitEntityView unitEntityViewTexReplacer_old(UnitEntityView unitEntityView, string texfullpath)
@@ -632,6 +1059,7 @@ namespace NpcHQTextures
                     if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
                     {
 
+                        Main.DebugLog("texreplacer " + smr.material?.mainTexture?.name);
                         if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)
                         {
                             Main.Init();
@@ -774,6 +1202,8 @@ namespace NpcHQTextures
             }
 
   
+
+
             UnitCustomizationPreset preset = blueprintUnit.CustomizationPreset;
 
           
@@ -1155,108 +1585,9 @@ namespace NpcHQTextures
             return fileFullPath;
 
         }
-        static bool Load(UnityModManager.ModEntry modEntry)
-        {
-
-
-            try
-            {
-                Main.logger = modEntry.Logger;
-                Main.modEnabled = modEntry.Active;
- 
-              
-                modEntry.OnToggle = new Func<UnityModManager.ModEntry, bool, bool>(Main.OnToggle);
-              //  modEntry.OnGUI = new Action<UnityModManager.ModEntry>(Main.OnGUI);
-
-
-                Main.harmonyInstance = HarmonyInstance.Create(modEntry.Info.Id);
-                modEntry.OnUnload = new Func<UnityModManager.ModEntry, bool>(Main.Unload);
-
-            }
-            catch (Exception ex)
-            {
-                DebugError(ex);
-                throw ex;
-            }
-
-            if (!Main.ApplyPatch(typeof(EntityCreationController_SpawnUnit0_Patch), "EntityCreationController_SpawnUnit0_Patch"))
-            {
-                DebugLog("Failed to patch EntityCreationController_SpawnUnit0_Patch");
-            }
-
-            if (!Main.ApplyPatch(typeof(EntityCreationController_SpawnUnit_Patch), "EntityCreationController_SpawnUnit_Patch_Patch"))
-            {
-                DebugLog("Failed to patch EntityCreationController_SpawnUnit");
-            }
-             if (!Main.ApplyPatch(typeof(UnitEntityData_CreateView_Patch), "UnitEntityData_CreateView_Patch"))
-                 {
-                     DebugLog("Failed to patch UnitEntityData_CreateView");
-                 }
-
-            if (!Main.ApplyPatch(typeof(LibraryScriptableObject_LoadDictionary_Patch), "Run once startup hook"))
-            {
-                DebugLog("Failed to patch LibraryScriptableObject_LoadDictionary");
-            }
-
-
-            
-
-
-            return true;
-        }
-        private static void OnGUI(UnityModManager.ModEntry modEntry)
-        {
-            GUILayoutOption[] noExpandwith = new GUILayoutOption[]
-             {
-                GUILayout.ExpandWidth(false)
-             };
 
 
 
-
-            if (Main.okPatches.Count > 0)
-            {
-                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
-
-                GUILayout.Label("<b>OK: Some patches apply:</b>", noExpandwith);
-
-                foreach (string str in Main.okPatches)
-                {
-                    GUILayout.Label("  • <b>" + str + "</b>", noExpandwith);
-                }
-                GUILayout.EndVertical();
-            }
-            if (Main.failedPatches.Count > 0)
-            {
-                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
-                GUILayout.Label("<b>Error: Some patches failed to apply. These features may not work:</b>", noExpandwith);
-                foreach (string str2 in Main.failedPatches)
-                {
-                    GUILayout.Label("  • <b>" + str2 + "</b>", noExpandwith);
-                }
-                GUILayout.EndVertical();
-            }
-            if (Main.okLoading.Count > 0)
-            {
-                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
-                GUILayout.Label("<b>OK: Some assets loaded:</b>", noExpandwith);
-                foreach (string str3 in Main.okLoading)
-                {
-                    GUILayout.Label("  • <b>" + str3 + "</b>", noExpandwith);
-                }
-                GUILayout.EndVertical();
-            }
-            if (Main.failedLoading.Count > 0)
-            {
-                GUILayout.BeginVertical(Array.Empty<GUILayoutOption>());
-                GUILayout.Label("<b>Error: Some assets failed to load. Saves using these features won't work:</b>", noExpandwith);
-                foreach (string str4 in Main.failedLoading)
-                {
-                    GUILayout.Label("  • <b>" + str4 + "</b>", noExpandwith);
-                }
-                GUILayout.EndVertical();
-            }
-        } 
         internal static bool ApplyPatch(Type type, string featureName)
         {
             bool result;
@@ -1362,22 +1693,12 @@ namespace NpcHQTextures
 
         public static UnityModManagerNet.UnityModManager.ModEntry.ModLogger logger;
         public static bool modEnabled;
-        private static HarmonyInstance harmonyInstance;
+        public static HarmonyInstance harmonyInstance;
         private static readonly Dictionary<Type, bool> typesPatched = new Dictionary<Type, bool>();
         private static readonly List<string> failedPatches = new List<string>();
         private static readonly List<string> okPatches = new List<string>();
         private static readonly List<string> okLoading = new List<string>();
         private static readonly List<string> failedLoading = new List<string>();
-
-        [Harmony12.HarmonyPatch(typeof(LibraryScriptableObject), "LoadDictionary")]
-        public static class LibraryScriptableObject_LoadDictionary_Patch
-        {
-            static void Postfix(LibraryScriptableObject __instance)
-            {
-
-                Main.SafeLoad(new Action(Main.Init), "Example1 of Startup Asset Load Here");
-            }
-        }
 
 
 

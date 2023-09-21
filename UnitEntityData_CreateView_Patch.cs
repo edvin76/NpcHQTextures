@@ -1,27 +1,136 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Harmony12;
-using Kingmaker;
-using Kingmaker.Blueprints;
 using Kingmaker.EntitySystem;
 using Kingmaker.EntitySystem.Entities;
-using Kingmaker.EntitySystem.Persistence.Scenes;
+using Kingmaker.UnitLogic;
 using Kingmaker.UnitLogic.Buffs;
-using Kingmaker.UnitLogic.Customization;
 using Kingmaker.View;
 using UnityEngine;
-//
-namespace NpcHQTextures                                                                                                               
+using UnityModManagerNet;
+using Kingmaker.Blueprints.Root;
+using Kingmaker.Blueprints;
+using Kingmaker;
+
+namespace NpcHQTextures
 {
-	// Token: 0x02000004 RID: 4
-	[HarmonyPatch(typeof(UnitEntityData), "CreateView", MethodType.Normal)]
+    // Token: 0x02000004 RID: 4
+    [HarmonyPatch(typeof(UnitEntityData), "CreateView", MethodType.Normal)]
 	public static class UnitEntityData_CreateView_Patch
     {
-		// Token: 0x06000003 RID: 3 RVA: 0x000027B4 File Offset: 0x000009B4
-		private static bool Prefix(UnitEntityData __instance, ref UnitEntityView __result)
+
+ 
+        // Token: 0x06000003 RID: 3 RVA: 0x000027B4 File Offset: 0x000009B4
+        private static bool Prefix(UnitEntityData __instance, ref UnitEntityView __result)
 		{
+
+
+            if (!Main.modEnabled || Game.Instance.Player.AllCharacters.Contains(__instance) )
+                return true;
+
+
+
+            Main.DebugLog("CreateView: " + __instance.CharacterName + " - " + __instance.Blueprint.name);
+
+
+
+
+            Quaternion quaternion = new Quaternion();
+            Quaternion quaternion1;
+            UnitEntityView unitEntityView3 = new UnitEntityView();
+            
+            string path = "";
+            
+            Polymorph activePolymorph = __instance.GetActivePolymorph();
+            if (activePolymorph != null)
+            {
+                UnitEntityView unitEntityView = activePolymorph.Prefab.Load(false);
+                if (unitEntityView)
+                {
+                    quaternion1 = (unitEntityView.ForbidRotation ? Quaternion.identity : Quaternion.Euler(0f, __instance.Orientation, 0f));
+                    UnitEntityView unitEntityView1 = UnityEngine.Object.Instantiate<UnitEntityView>(unitEntityView, __instance.Position, quaternion1);
+                    activePolymorph.SetReplacementViewOnLoad(unitEntityView1);
+                    unitEntityView1.DisableSizeScaling = true;
+
+                    path = Main.randomPool(__instance.Blueprint, unitEntityView1);
+
+                    unitEntityView3 = unitEntityView1;
+                    //return unitEntityView1;
+                }
+            }
+            else
+            {
+                UnitEntityView unitEntityView2 = (string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid) ? __instance.Blueprint.Prefab.Load(false) : ResourcesLibrary.TryGetResource<UnitEntityView>(__instance.Descriptor.CustomPrefabGuid, false));
+                if (unitEntityView2 == null)
+                {
+                    UberDebug.LogError(__instance.Blueprint, "Cannot find prefab for unit", Array.Empty<object>());
+                    __result = null;
+                    return false;
+                }
+                quaternion = (unitEntityView2.ForbidRotation ? Quaternion.identity : Quaternion.Euler(0f, __instance.Orientation, 0f));
+
+                path = Main.randomPool(__instance.Blueprint, unitEntityView2);
+
+                unitEntityView3 = UnityEngine.Object.Instantiate<UnitEntityView>(unitEntityView2, __instance.Position, quaternion);
+
+            }
+
+
+            if (path.Length > 3 && !path.Equals(Main.hqTexPath))
+                unitEntityView3 = Main.unitEntityViewTexReplacer(unitEntityView3, path, Path.GetFileNameWithoutExtension(path));
+
+
+               /*
+
+               foreach (SkinnedMeshRenderer smr in unitEntityView3.GetComponentsInChildren<SkinnedMeshRenderer>())
+               {
+                   if (smr.material != null)
+                   {
+                       try
+                       {
+
+                           if (path.Length < 3)
+                               path = Path.Combine(GetTexturesDir(), smr.material.mainTexture.name + ".png");
+
+                            Main.DebugLog("LOOKING FOR: " + path);
+
+                           if (File.Exists(path))
+                           {
+                               string textureName = smr.material.mainTexture.name;
+                               Main.DebugLog("Found!!!!!!!!!!!!!!!: ");
+
+                               Texture2D baseMap = ReadTexture(path, 1024, 1024);
+
+
+                               if (baseMap != null && baseMap.GetRawTextureData().Length > 1)
+                               {
+
+
+                                   smr.material.SetTexture("_BaseMap", baseMap);
+
+
+                                   smr.material.mainTexture = baseMap;
+                                   smr.material.mainTexture.name = textureName;
+                               }
+                           }
+                           else
+                               Main.DebugLog("NOT found!!!!!");
+                       }
+                       catch (Exception x) { Main.DebugError(x); }
+                   }
+               }    
+
+               */
+               __result = UnityEngine.Object.Instantiate<UnitEntityView>(unitEntityView3, __instance.Position, quaternion);
+
+            return false;
+
+
+
+
+
+            /*
+            
             if (!Main.modEnabled)
             {
                 return true;
@@ -34,7 +143,7 @@ namespace NpcHQTextures
             }
            
 
-            Main.DebugLog("CreateView() -  " + __instance.Blueprint.CharacterName + " - " + __instance.Blueprint.name + " - " + __instance.Blueprint.AssetGuid);
+            Main.DebugLog("NEW CreateView() -  " + __instance.Blueprint.CharacterName + " - " + __instance.Blueprint.name + " - " + __instance.Blueprint.AssetGuid);
             Polymorph activePolymorph = __instance.GetActivePolymorph();
             if (activePolymorph != null)
             {
@@ -52,11 +161,11 @@ namespace NpcHQTextures
                         isprefab2 = true;
 
                         Tuple<string, string> result2 = new Tuple<string, string>("", "");
-                               if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
-                        {
-
-                            result2 = Main.randomPool(__instance.Blueprint, unitEntityView);
-                        }
+                        // if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
+                        // {
+                    
+                             result2 = Main.randomPool(__instance.Blueprint, unitEntityView);
+                     //   }
 
                         unitEntityView = Main.unitEntityViewTexReplacer(unitEntityView, result2.Item1, result2.Item2);
 
@@ -72,27 +181,16 @@ namespace NpcHQTextures
                         Tuple<string, string> result = new Tuple<string, string>("", "");
       
                         
-                        if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
-                        {
+                      //  if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
+                       // {
 
                             result = Main.randomPool(__instance.Blueprint, unitEntityView2);
-                        }
+                       // }
 
                         unitEntityView2 = Main.unitEntityViewTexReplacer(unitEntityView2, result.Item1, result.Item2);
                     }
 
-                    /*
 
-                    string texfullpath = "";
-                    if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid)&& __instance.Blueprint != null)
-                    {
-                        //texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
-
-                        unitEntityView2
-                    }
-
-                    unitEntityView2 = Main.unitEntityViewTexReplacer(unitEntityView2, texfullpath);
-                    */
                     activePolymorph.SetReplacementViewOnLoad(unitEntityView2);
                     unitEntityView2.DisableSizeScaling = true;
   //                  Main.DebugLog("1 " + unitEntityView2.name);
@@ -113,25 +211,16 @@ namespace NpcHQTextures
                 unitEntityView3.transform.position = __instance.Position;
                 unitEntityView3.transform.rotation = Quaternion.Euler(0f, __instance.Orientation, 0f);
 
-                /*
-                string texfullpath = "";
-                if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid) && __instance.Blueprint != null)
-                {
-                    texfullpath = Main.randomPool(__instance.Blueprint, __instance.Descriptor.CustomPrefabGuid);
-                }
 
-                unitEntityView3 = Main.unitEntityViewTexReplacer(unitEntityView3, texfullpath);
-                //                Main.DebugLog("2 " + unitEntityView3.name);
-                */
 
 
                 Tuple<string, string> result = new Tuple<string, string>("", "");
                 //if (!string.IsNullOrEmpty(__instance.Descriptor.CustomPrefabGuid))
-                if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
-                {
+               // if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
+               // {
 
                     result = Main.randomPool(__instance.Blueprint, unitEntityView3);
-                }
+               // }
 
                 unitEntityView3 = Main.unitEntityViewTexReplacer(unitEntityView3, result.Item1, result.Item2);
 
@@ -172,11 +261,11 @@ namespace NpcHQTextures
                 isprefab = true;
 
                 Tuple<string, string> result2 = new Tuple<string, string>("", "");
-                if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
-                {
+               // if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
+               // {
 
                     result2 = Main.randomPool(__instance.Blueprint, unitEntityView4);
-                }
+               // }
 
                 unitEntityView4 = Main.unitEntityViewTexReplacer(unitEntityView4, result2.Item1, result2.Item2);
 
@@ -197,11 +286,11 @@ namespace NpcHQTextures
                 Tuple<string, string> result = new Tuple<string, string>("", "");
 
 
-                if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
-                {
+               // if (__instance.Blueprint.CustomizationPreset != null || Main.customPrefabUnits.ContainsKey(__instance.Blueprint.name))
+               // {
 
                     result = Main.randomPool(__instance.Blueprint, resultView);
-                }
+               // }
 
                 resultView = Main.unitEntityViewTexReplacer(resultView, result.Item1, result.Item2);
             }
@@ -216,11 +305,56 @@ namespace NpcHQTextures
             Main.notRandom = false;
 
             return false;
-		}
+            */
 
-     
+        }
 
-    
+
+        public static string GetTexturesDir()
+        {
+            return Path.Combine(UnityModManager.modsPath, Main.harmonyInstance.Id, "HQTex");
+
+        }
+
+
+        public static Texture2D ReadTexture(string path, int x, int y)
+        {
+            byte[] array = File.ReadAllBytes(path);
+
+
+            Texture2D texture2D = new Texture2D(x, y, TextureFormat.ARGB32, true);
+
+            texture2D.filterMode = FilterMode.Point;
+
+
+            texture2D.anisoLevel = 9;
+            ImageConversion.LoadImage(texture2D, array);
+
+
+            RenderTexture renderTex = RenderTexture.GetTemporary(
+                                 texture2D.width,
+                                 texture2D.height,
+                                 32,
+                                 RenderTextureFormat.ARGB32,
+                                 RenderTextureReadWrite.sRGB);
+
+            renderTex.antiAliasing = 8;
+            renderTex.anisoLevel = 9;
+            renderTex.filterMode = FilterMode.Trilinear;
+            Graphics.Blit(texture2D, renderTex);
+            RenderTexture previous = RenderTexture.active;
+            RenderTexture.active = renderTex;
+
+            Texture2D readableText = new Texture2D(texture2D.width, texture2D.height);
+            readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
+            readableText.Apply();
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(renderTex);
+
+            return readableText;
+
+        }
+
 
     }
 
