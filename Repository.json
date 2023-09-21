@@ -1,6 +1,10 @@
 {
 	"Releases":
 	[
-		{"Id": "NpcHQTextures", "Version": "1.0.6"}
+		{
+			"Id": "NpcHQTextures", 
+			"Version": "1.1"
+			"DownloadUrl": "https://github.com/edvin76/NpcHQTextures/raw/master/NpcHQTextures.zip",
+		}
 	]
 }

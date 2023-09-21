@@ -1,12 +1,12 @@
 {
   "Id": "NpcHQTextures",
   "DisplayName": "Npc HQ Textures",
-  "Author": "PathfindeModmaker",
+  "Author": "Edvin76",
   "Version": "1.0.6",
   "ManagerVersion": "0.21.0",
   "Requirements": [],
   "AssemblyName": "NpcHQTextures.dll",
   "EntryMethod": "NpcHQTextures.Main.Load",
   "HomePage": "https://www.nexusmods.com/pathfinderkingmaker/mods/171",
-  "Repository": "https://raw.githubusercontent.com/PathfinderModmaker/NpcHQTextures/master/Repository.json"
+  "Repository": "https://raw.githubusercontent.com/Edvin76/NpcHQTextures/master/Repository.json"
 }
