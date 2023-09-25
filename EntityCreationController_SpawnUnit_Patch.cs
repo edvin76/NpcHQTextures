@@ -97,50 +97,9 @@ namespace NpcHQTextures
         }
 
 
-        public static string GetTexturesDir()
-        {
-            return Path.Combine(UnityModManager.modsPath, Main.harmonyInstance.Id, "HQTex");
-
-        }
+ 
 
 
-        public static Texture2D ReadTexture(string path, int x, int y)
-        {
-            byte[] array = File.ReadAllBytes(path);
-
-
-            Texture2D texture2D = new Texture2D(x, y, TextureFormat.ARGB32, true);
-
-            texture2D.filterMode = FilterMode.Point;
-
-
-            texture2D.anisoLevel = 9;
-            ImageConversion.LoadImage(texture2D, array);
-
-
-            RenderTexture renderTex = RenderTexture.GetTemporary(
-                                 texture2D.width,
-                                 texture2D.height,
-                                 32,
-                                 RenderTextureFormat.ARGB32,
-                                 RenderTextureReadWrite.sRGB);
-
-            renderTex.antiAliasing = 8;
-            renderTex.anisoLevel = 9;
-            renderTex.filterMode = FilterMode.Trilinear;
-            Graphics.Blit(texture2D, renderTex);
-            RenderTexture previous = RenderTexture.active;
-            RenderTexture.active = renderTex;
-
-            Texture2D readableText = new Texture2D(texture2D.width, texture2D.height);
-            readableText.ReadPixels(new Rect(0, 0, renderTex.width, renderTex.height), 0, 0);
-            readableText.Apply();
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(renderTex);
-
-            return readableText;
-
-        }
 
     }
 
