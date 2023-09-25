@@ -49,7 +49,7 @@ namespace NpcHQTextures
 
             string path = Main.randomPool(unit, prefab);
 
-            if(path.Length > 3 && !path.Equals(Main.hqTexPath))
+           // if(path.Length > 3 && !path.Equals(Main.hqTexPath))
             prefab = Main.unitEntityViewTexReplacer(prefab, path, Path.GetFileNameWithoutExtension(path));
 
             /*

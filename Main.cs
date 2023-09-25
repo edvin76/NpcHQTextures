@@ -397,12 +397,12 @@ namespace NpcHQTextures
         public static UnitEntityView unitEntityViewTexReplacer(UnitEntityView unitEntityView, string texfullpath, string origtexname)
         {
 
-
+            /*
             if(texfullpath == "" || origtexname == "")
             {
                 return unitEntityView;
             };
-
+            */
             //  Main.DebugLog("a");
 
             if (unitEntityView != null && unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Count() > 0)
@@ -410,19 +410,20 @@ namespace NpcHQTextures
                 Main.DebugLog("unitEntityViewTexReplacer: unitEntityView has SkinnedMeshRenderer");
 
 
-                    if (string.IsNullOrEmpty(origtexname))
+
+                foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
                 {
-                    foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+
+                    if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
                     {
+                        //Main.DebugLog("c");
 
-                        if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
+                        if (string.IsNullOrEmpty(origtexname))
                         {
-                            //Main.DebugLog("c");
-
-                             if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)
-                             {
-                                 Main.Init();
-                             }
+                            if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)
+                            {
+                                Main.Init();
+                            }
 
                             Main.DebugLog("unitEntityViewTexReplacer smr: " + smr.material?.mainTexture?.name);
 
@@ -442,7 +443,7 @@ namespace NpcHQTextures
                                         {
                                             texfullpath = path;
                                             found = true;
-                                            break;
+
                                         }
                                     }
                                     if (!found)
@@ -452,7 +453,7 @@ namespace NpcHQTextures
                                             if (Path.GetFileNameWithoutExtension(path).Contains(smr.material.mainTexture.name))
                                             {
                                                 texfullpath = path;
-                                                break;
+
                                             }
 
                                         }
@@ -464,130 +465,109 @@ namespace NpcHQTextures
                                 }
 
                                 origtexname = smr.material.mainTexture.name;
-
-
-                                Main.DebugLog("unitEntityViewTexReplacer smr: " + texfullpath);
-                                //Main.DebugLog("unitEntityViewTexReplacer smr: " + origtexname);
-
-                                break;
                             }
                         }
+                        Main.DebugLog("unitEntityViewTexReplacer smr: " + texfullpath);
+                        //Main.DebugLog("unitEntityViewTexReplacer smr: " + origtexname);
+
+                        string tname = "noname";
+
+                        string anyInMesh = "false";
+
+                        Main.DebugLog("texreplacer: " + texfullpath + " - " + origtexname);
+
+
+                        if (File.Exists(texfullpath))
+                        //   Main.OrigTexName = origtexname;
+                        {
+                            Main.DebugLog("texreplacer: FOUND!!!");
+
+                            try
+                            {
+
+                                byte[] array = File.ReadAllBytes(texfullpath);
+
+
+
+                                Vector2Int v2 = Main.texOnDiskInfoList[texfullpath];
+
+
+                                Texture2D texture2D = new Texture2D(v2.x, v2.y, TextureFormat.ARGB32, false);
+
+
+                                ImageConversion.LoadImage(texture2D, array);
+
+
+                                texture2D.Apply();
+
+                                if (texture2D != null)
+                                {
+                                    // Main.ReadableText = readableText;
+                                    Main.DebugLog("c");
+
+                                    //   if (unitEntityView.CharacterAvatar != null)
+                                    //   {
+
+                                    //       Main.DebugLog("charav!");
+                                    //   }
+                                    //    else { Main.DebugLog("NO charav!"); }
+
+
+                                    if (unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Any(x => (tname = x.material?.mainTexture?.name) == origtexname))
+                                    {
+                                        // string tname2 = "stillno";
+                                        anyInMesh = "true";
+
+
+                                        foreach (SkinnedMeshRenderer smr2 in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
+                                        {
+                                            if (smr2.material?.mainTexture?.name == origtexname)
+                                            {
+
+                                                smr2.material.mainTexture = texture2D;
+                                                smr2.material.mainTexture.name = origtexname;
+                                            }
+
+                                        }
+
+                                        Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
+                                        Main.DebugLog(texfullpath);
+
+                                        //   unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => (tname = x.material.mainTexture.name) == origtexname).material.mainTexture = readableText;
+                                        // Main.DebugLog(tname2);
+                                    }
+                                    else
+                                    {
+                                        Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
+                                    }
+
+
+                                }
+                            }
+                            catch (Exception x) { Main.DebugLog("Caught: (" + origtexname + " - " + tname + " - " + anyInMesh + ") " + x.ToString()); }
+
+
+                        }
+                        else
+                            Main.DebugLog("texreplacer: NOT found");
+
+
+
+
+
                     }
                 }
                 
-               else  if (string.IsNullOrEmpty(texfullpath))
-                {
-                    bool found = false;
-                    foreach (string path in Main.texOnDiskInfoList.Keys)
-                    {
-                        if (Path.GetFileNameWithoutExtension(path).Equals(origtexname))
-                        {
-                            texfullpath = path;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found)
-                    {
-                        foreach (string path in Main.texOnDiskInfoList.Keys)
-                        {
-                            if (Path.GetFileNameWithoutExtension(path).Contains(origtexname))
-                            {
-                                texfullpath = path;
-                                break;
-                            }
+                
 
-                        }
-                    }
 
-                    Main.DebugLog("unitEntityViewTexReplacer smr 2: " + texfullpath);
-                    Main.DebugLog("unitEntityViewTexReplacer smr 2: " + origtexname);
 
-                }
-
-                string tname = "noname";
-
-                string anyInMesh = "false";
-
-                Main.DebugLog("texreplacer: "+ texfullpath +" - "+origtexname);
 
 
 
                 if (!string.IsNullOrEmpty(texfullpath) && !string.IsNullOrEmpty(origtexname))
                 {
-                    if (File.Exists(texfullpath))
-                    //   Main.OrigTexName = origtexname;
-                    {
-                        Main.DebugLog("texreplacer: FOUND!!!");
-
-                        try
-                        {
-
-                            byte[] array = File.ReadAllBytes(texfullpath);
-
-
-
-                            Vector2Int v2 = Main.texOnDiskInfoList[texfullpath];
-
-
-                            Texture2D texture2D = new Texture2D(v2.x, v2.y, TextureFormat.ARGB32, false);
-
-    
-                            ImageConversion.LoadImage(texture2D, array);
-
-
-                            texture2D.Apply();
-
-                            if (texture2D != null)
-                            {
-                                // Main.ReadableText = readableText;
-                                Main.DebugLog("c");
-
-                                //   if (unitEntityView.CharacterAvatar != null)
-                                //   {
-
-                                //       Main.DebugLog("charav!");
-                                //   }
-                                //    else { Main.DebugLog("NO charav!"); }
-
-
-                                if (unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().Any(x => (tname = x.material?.mainTexture?.name) == origtexname))
-                                {
-                                    // string tname2 = "stillno";
-                                    anyInMesh = "true";
-
-
-                                    foreach (SkinnedMeshRenderer smr in unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>())
-                                    {
-                                        if (smr.material?.mainTexture?.name == origtexname)
-                                        {
-
-                                            smr.material.mainTexture = texture2D;
-                                            smr.material.mainTexture.name = origtexname;
-                                        }
-
-                                    }
-
-                                    Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
-                                    Main.DebugLog(texfullpath);
-
-                                    //   unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => (tname = x.material.mainTexture.name) == origtexname).material.mainTexture = readableText;
-                                    // Main.DebugLog(tname2);
-                                }
-                                else
-                                {
-                                    Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
-                                }
-
-
-                            }
-                        }
-                        catch (Exception x) { Main.DebugLog("Caught: (" + origtexname + " - " + tname + " - " + anyInMesh + ") " + x.ToString()); }
-
-
-                    }
-                    else
-                        Main.DebugLog("texreplacer: NOT found");
+   
                 }
 
             }
@@ -740,7 +720,7 @@ namespace NpcHQTextures
                 {
                     Main.DebugLog("not random in any lowest level prefab even");
                     norandom = true;
-
+                    return "";
                 }
 
 
@@ -812,8 +792,8 @@ namespace NpcHQTextures
 
                     if (smr.material != null && !string.IsNullOrEmpty(smr.material?.mainTexture?.name))
                     {
-                        if (norandom)
-                            return Path.Combine(Main.hqTexPath, smr.material?.mainTexture?.name+".png");
+                       // if (norandom)
+                         //   return Path.Combine(Main.hqTexPath, smr.material?.mainTexture?.name+".png");
                         //  Main.DebugLog($"smr.material.mainTexture.name: {smr.material.mainTexture.name}");
                         // Main.DebugLog($"texOnDiskInfoList.Count(): {Main.texOnDiskInfoList.Count().ToString()}");
                         if (Main.texOnDiskInfoList == null || Main.texOnDiskInfoList.Count() == 0)

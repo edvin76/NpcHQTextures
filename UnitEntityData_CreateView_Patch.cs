@@ -75,8 +75,8 @@ namespace NpcHQTextures
 
             }
 
-
-            if (path.Length > 3 && !path.Equals(Main.hqTexPath))
+            Main.DebugLog("createview(): "+path);
+         //   if (path.Length > 3 && !path.Equals(Main.hqTexPath))
                 unitEntityView3 = Main.unitEntityViewTexReplacer(unitEntityView3, path, Path.GetFileNameWithoutExtension(path));
 
 
