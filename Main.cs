@@ -419,7 +419,7 @@ namespace NpcHQTextures
                                 Main.Init();
                             }
 
-                            Main.DebugLog("unitEntityViewTexReplacer smr: " + smr.material?.mainTexture?.name);
+                           // Main.DebugLog("unitEntityViewTexReplacer smr: " + smr.material?.mainTexture?.name);
 
                             if (Main.texOnDiskInfoList.Keys.Any(key => Path.GetFileNameWithoutExtension(key).Equals(smr.material.mainTexture.name) ? true : key.Contains(smr.material.mainTexture.name)))
                             {
@@ -461,20 +461,20 @@ namespace NpcHQTextures
                                 origtexname = smr.material.mainTexture.name;
                             }
                         }
-                        Main.DebugLog("unitEntityViewTexReplacer smr: " + texfullpath);
+                       // Main.DebugLog("unitEntityViewTexReplacer smr: " + texfullpath);
                         //Main.DebugLog("unitEntityViewTexReplacer smr: " + origtexname);
 
                         string tname = "noname";
 
                         string anyInMesh = "false";
 
-                        Main.DebugLog("texreplacer: " + texfullpath + " - " + origtexname);
+                       // Main.DebugLog("texreplacer: " + texfullpath + " - " + origtexname);
 
 
                         if (File.Exists(texfullpath))
                         //   Main.OrigTexName = origtexname;
                         {
-                            Main.DebugLog("texreplacer: FOUND!!!");
+                           // Main.DebugLog("texreplacer: FOUND!!!");
 
                             try
                             {
@@ -497,7 +497,7 @@ namespace NpcHQTextures
                                 if (texture2D != null)
                                 {
                                     // Main.ReadableText = readableText;
-                                    Main.DebugLog("c");
+                                 //   Main.DebugLog("c");
 
                                     //   if (unitEntityView.CharacterAvatar != null)
                                     //   {
@@ -524,15 +524,15 @@ namespace NpcHQTextures
 
                                         }
 
-                                        Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
-                                        Main.DebugLog(texfullpath);
+                                      //  Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
+                                       // Main.DebugLog(texfullpath);
 
                                         //   unitEntityView.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => (tname = x.material.mainTexture.name) == origtexname).material.mainTexture = readableText;
                                         // Main.DebugLog(tname2);
                                     }
                                     else
                                     {
-                                        Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
+                                       // Main.DebugLog("wtf: (" + origtexname + " - " + tname + " - " + anyInMesh + ") ");
                                     }
 
 
@@ -542,8 +542,8 @@ namespace NpcHQTextures
 
 
                         }
-                        else
-                            Main.DebugLog("texreplacer: NOT found");
+                       // else
+                         //   Main.DebugLog("texreplacer: NOT found");
 
 
 
@@ -556,20 +556,12 @@ namespace NpcHQTextures
 
 
 
-
-
-
-                if (!string.IsNullOrEmpty(texfullpath) && !string.IsNullOrEmpty(origtexname))
-                {
-   
-                }
-
             }
-            else
-            {
-                Main.DebugLog("unitEntityView texreplacer has NO SkinnedMeshRenderer");
+           // else
+           // {
+             //   Main.DebugLog("unitEntityView texreplacer has NO SkinnedMeshRenderer");
 
-            }
+           // }
 
 
 
