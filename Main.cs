@@ -94,9 +94,14 @@ namespace NpcHQTextures
 
             hqTexPath = Path.Combine(UnityModManager.modsPath, Main.harmonyInstance.Id, "HQTex");
 
-            if(kingmakerLoaded)
-                Main.Init();
 
+            BlueprintUnit dummyUnit = ResourcesLibrary.TryGetBlueprint<BlueprintUnit>("1b893f7cf2b150e4f8bc2b3c389ba71d");
+
+
+            if (dummyUnit != null)
+            {
+                Main.Init();
+            }
 
             return true;
         }
@@ -174,7 +179,7 @@ namespace NpcHQTextures
 
             }
 
-
+            /*
             List<BlueprintUnit> blueprintUnits = ResourcesLibrary.GetBlueprints<BlueprintUnit>().ToList();
 
             int i = 0;
@@ -207,7 +212,7 @@ namespace NpcHQTextures
                 }
 
             }
-
+            */
 
         }
 
@@ -220,8 +225,9 @@ namespace NpcHQTextures
              {
                 GUILayout.ExpandWidth(false)
              };
-            GUILayout.Label("<b>OK: new version</b>" + hqTexPath, noExpandwith);
+            // GUILayout.Label("<b>OK: new version</b>" + hqTexPath, noExpandwith);
 
+#if DEBUG
             if (Game.Instance.CurrentMode == GameModeType.GlobalMap)
             {
                 GUILayout.BeginHorizontal(Array.Empty<GUILayoutOption>());
@@ -231,22 +237,9 @@ namespace NpcHQTextures
                     int CR = Game.Instance.Player.GlobalMap.CurrentRegionCR + 1;
 
                     BlueprintRandomEncounter blueprintRandomEncounter = RandomEncounterSelector.SelectEncounter(CR, false, false);
-                    // Main.DebugLog("1");
-                    //MapTravelData travelData = RandomEncountersController.State.TravelData;
-                    //Main.DebugLog("2");
-                    //GlobalMapEdge edgeObject = GlobalMapRules.Instance.GetEdgeObject(travelData.CurrentEdge.Blueprint);
-                    //Main.DebugLog("3");
-                    //BlueprintRandomEncounter blueprintRandomEncounter = RandomEncounterSelector.TrySelect(edgeObject, CR, false);
-                    //Main.DebugLog("4");
-                    RandomEncounterData encounter = new RandomEncounterData(blueprintRandomEncounter, null);
-                    //Main.DebugLog("5");
-
-                    //Game.Instance.Player.GlobalMap.StartEncounter(encounter);
-
-                    //GlobalMapController.GlobalMapState.Player.StartEncounter(encounter);
-                    //RandomEncountersController.State.StartEncounter(encounter);
-
+  
                     Game.Instance.RandomEncountersController.StartEncounter(blueprintRandomEncounter, CR, null, false, false);
+                
                 }
                 GUILayout.EndHorizontal();
             }
@@ -293,6 +286,7 @@ namespace NpcHQTextures
                 }
                 GUILayout.EndVertical();
             }
+#endif
         }
 
 
@@ -590,7 +584,7 @@ namespace NpcHQTextures
             string presetName = "";
             UnitCustomizationPreset preset = null;
 
-            Main.DebugLog("1");
+            //Main.DebugLog("1");
 
             
             switch (blueprintUnit.name)
@@ -672,53 +666,53 @@ namespace NpcHQTextures
 
             }
 
-            Main.DebugLog("2");
+            //Main.DebugLog("2");
 
             bool norandom = false;
 
             if (Main.customPrefabUnits == null)
             {
-                Main.DebugLog("doh...");
+                //Main.DebugLog("doh...");
 
                 Main.Init();
             }
 
             if (blueprintUnit.CustomizationPreset != null)
             {
-                Main.DebugLog("3");
+               // Main.DebugLog("3");
 
                 presetName = blueprintUnit.CustomizationPreset.name;
 
                 preset = blueprintUnit.CustomizationPreset;
 
 
-                Main.DebugLog($"orig blueprintUnit.CustomizationPreset.name: {presetName}");
+               // Main.DebugLog($"orig blueprintUnit.CustomizationPreset.name: {presetName}");
             }
             else if (Main.customPrefabUnits.ContainsKey(blueprintUnit.name))
             {
-               Main.DebugLog("4");
+              // Main.DebugLog("4");
 
                 preset = ResourcesLibrary.TryGetBlueprint<UnitCustomizationPreset>(Main.customPrefabUnits[blueprintUnit.name]);
 
                 presetName = preset.name;
 
-                Main.DebugLog($"customprefab only in a preset: {presetName}");
+              //  Main.DebugLog($"customprefab only in a preset: {presetName}");
             }
             else
             {
-                Main.DebugLog("5");
+              //  Main.DebugLog("5");
 
                 if (Main.allVariations == null || Main.allVariations.Count() == 0)
                 {
                     Main.Init();
                 }
 
-                Main.DebugLog("6");
+              //  Main.DebugLog("6");
 
                 //if (Main.notRandom)
                 if (!Main.allVariations.Keys.ToList().Any(x => x.Load() == unitEntityView) && !Main.allVariations.ContainsKey(blueprintUnit.Prefab))
                 {
-                    Main.DebugLog("not random in any lowest level prefab even");
+                 //   Main.DebugLog("not random in any lowest level prefab even");
                     norandom = true;
                     return "";
                 }
@@ -727,7 +721,7 @@ namespace NpcHQTextures
 
             }
 
-            Main.DebugLog("7");
+           // Main.DebugLog("7");
 
 
             if (Main.allVariations == null || Main.allVariations.Count() == 0)
@@ -736,14 +730,14 @@ namespace NpcHQTextures
             }
 
 
-            Main.DebugLog("8");
+          //  Main.DebugLog("8");
 
 
-            Main.DebugLog("randomPool() -  " + blueprintUnit.CharacterName + " - " + blueprintUnit.name + " - " + blueprintUnit.AssetGuid);
+         //   Main.DebugLog("randomPool() -  " + blueprintUnit.CharacterName + " - " + blueprintUnit.name + " - " + blueprintUnit.AssetGuid);
 
             string path2 = Path.Combine(Main.hqTexPath, "RandomPool");
 
-            Main.DebugLog($"path2: {path2}");
+         //   Main.DebugLog($"path2: {path2}");
 
             // string texfullpath = "";
 
@@ -834,7 +828,7 @@ namespace NpcHQTextures
                 }
             }
 
-            Main.DebugLog("9");
+          //  Main.DebugLog("9");
 
             int pf = 0;
             bool stop = false;
@@ -852,9 +846,9 @@ namespace NpcHQTextures
                         // || ucv.Prefab.Load().Blueprint.AssetGuid == unitEntityView.Blueprint.AssetGuid)
                         if (/*ucv.Prefab == Main.preset?.Prefab ||*/ ucv.Prefab.Load() == unitEntityView || ucv.Prefab == blueprintUnit.Prefab)
                         {
-                            Main.DebugLog($"preset.name: {preset.name}");
-                            Main.DebugLog($"UnitVariations index: {pf}");
-                            Main.DebugLog(ucv.Prefab.Load().name);
+                        //    Main.DebugLog($"preset.name: {preset.name}");
+                        //    Main.DebugLog($"UnitVariations index: {pf}");
+                        //    Main.DebugLog(ucv.Prefab.Load().name);
                             stop = true;
                             break;
 
@@ -864,7 +858,7 @@ namespace NpcHQTextures
 
                 }
             }
-            Main.DebugLog("10");
+          //  Main.DebugLog("10");
 
             if (!stop)
             {
@@ -891,9 +885,9 @@ namespace NpcHQTextures
                             {
                                 //newpreset = preset2;
                                 presetName = preset2.name;
-                                Main.DebugLog($"preset2.name: {preset2.name}");
-                                Main.DebugLog($"UnitVariations index: {pf}");
-                                Main.DebugLog(ucv.Prefab.Load().name);
+                               // Main.DebugLog($"preset2.name: {preset2.name}");
+                               // Main.DebugLog($"UnitVariations index: {pf}");
+                              //  Main.DebugLog(ucv.Prefab.Load().name);
 
                                 /*if (Main.allVariations.ContainsKey(unit.Prefab))
                                 {
@@ -946,12 +940,12 @@ namespace NpcHQTextures
 
             }
 
-            Main.DebugLog("11");
+            //Main.DebugLog("11");
 
             if (!stop)
             {
 
-                Main.DebugLog("not random");
+              //  Main.DebugLog("not random");
                 return "";
 
             }
@@ -967,7 +961,7 @@ namespace NpcHQTextures
 
             //   Main.DebugLog($"files in {Path.Combine(path2, presetName, pf.ToString())}: {files.Count().ToString()}");
 
-            Main.DebugLog("12");
+         //   Main.DebugLog("12");
 
             foreach (string path in files)
             {
@@ -991,7 +985,7 @@ namespace NpcHQTextures
             }
             fileFullPath = Path.Combine(Main.hqTexPath, fileName);
 
-            Main.DebugLog("13");
+          //  Main.DebugLog("13");
 
             //string dirInPreset = Path.Combine(presetName, pf.ToString(), fileName);
 
@@ -1095,9 +1089,9 @@ namespace NpcHQTextures
 
         public static void DebugLog(string msg)
         {
-            #if DEBUG
+#if DEBUG
             if (logger != null) logger.Log(msg);
-            #endif
+#endif
         }
         public static void DebugError(Exception ex)
         {
